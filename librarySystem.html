@@ -1,0 +1,103 @@
+<script src="simpletest.js"></script>
+<script>
+
+
+    (function() {
+        var libraryStorage = {};
+
+        function librarySystem(libraryName, dependency, callback) {
+            if (arguments.length > 1) {
+                libraryStorage[libraryName] = {
+                    'dependency': dependency,
+                    'callback': callback,
+                    'libraryLoaded': false
+                };
+                
+            // we need to return reference to dependencies as well
+            } else if(!libraryStorage[libraryName].libraryLoaded) {
+                var lib = libraryStorage[libraryName];
+                var args = [];
+
+                // load all dependencies which will be arguments for callback
+                for (var i = 0; i < lib.dependency.length; i++) {
+                    args[i] = librarySystem(lib.dependency[i]);
+                }
+                
+                // make call to callback with dependencies as arguments
+                lib.libraryLoaded = true;
+                return lib.callback.apply(this, args);
+            }
+        }
+
+        this.librarySystem = librarySystem;
+    })();
+
+
+
+    tests({ 
+        'It should return the given library if only one argument is provided.': function() {
+            librarySystem('app', [], function() {
+                return 'app';
+            });
+            var returnedLibrary = librarySystem('app');
+            eq(returnedLibrary, 'app');
+        },
+
+        'It should store the given library in libraryStorage for later retreival if the first and third argument are proviced.': function() {
+            librarySystem('app2', [], function() {
+                return 'app2';
+            });
+            var returnedLibrary = librarySystem('app2');
+            eq(returnedLibrary, 'app2');
+        },
+        'It should treat the second argument as array of dependencies to be loaded.': function() {
+            librarySystem('dependency', [], function() {
+                return 'loaded dependency';
+            });
+            var returnedLibrary = librarySystem('dependency');
+            eq(returnedLibrary, 'loaded dependency');
+        },
+        'It should be able to load multiple dependencies passed in as an array as the second argument.': function() {
+            librarySystem('name', [], function() {
+                return 'Gordon';
+            });
+            librarySystem('company', [], function() {
+              return 'Watch and Code';
+            });
+            librarySystem('workBlurb', ['name', 'company'], function(name, company) {
+                return name + ' works at ' + company;
+            });
+            var returnedLibrary = librarySystem('workBlurb'); // 'Gordon works at Watch and Code'    
+            eq(returnedLibrary, 'Gordon works at Watch and Code');
+        },
+        'It should be able to load libraries out of order.': function() {
+            librarySystem('workBlurb', ['name', 'company'], function(name, company) {
+                return name + ' works at ' + company;
+            });
+            librarySystem('name', [], function() {
+                return 'Gordon';
+            });
+            librarySystem('company', [], function() {
+              return 'Watch and Code';
+            });
+            var returnedLibrary = librarySystem('workBlurb'); // 'Gordon works at Watch and Code'    
+            eq(returnedLibrary, 'Gordon works at Watch and Code');
+        },
+        'It should call the callback for a library only run once.': function() {
+            librarySystem('workBlurb', ['name', 'company'], function(name, company) {
+                return name + ' works at ' + company;
+            });
+            librarySystem('name', [], function() {
+                return 'Gordon';
+            });
+            librarySystem('company', [], function() {
+              return 'Watch and Code';
+            });
+            var returnedLibrary = librarySystem('workBlurb'); // 'Gordon works at Watch and Code'   
+            var returnFromSecondCall = librarySystem('workBlurb');  
+            eq(returnFromSecondCall, undefined);
+        },        
+    });    
+
+
+</script>
