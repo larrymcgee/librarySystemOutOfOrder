@@ -95,6 +95,7 @@
             });
             var returnedLibrary = librarySystem('workBlurb'); // 'Gordon works at Watch and Code'   
             var returnFromSecondCall = librarySystem('workBlurb');  
+            eq(returnedLibrary, 'Gordon works at Watch and Code')
             eq(returnFromSecondCall, undefined);
         },        
     });    
